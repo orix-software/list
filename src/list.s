@@ -86,6 +86,9 @@ sopt := sopt1
 	SEEK_CUR = 0
 	XFSEEK =$3f
 
+	; COMAL = 210
+	BASIC = 1
+	DEBUG = 1
 ;----------------------------------------------------------------------
 ;				Page Zéro
 ;----------------------------------------------------------------------
@@ -280,9 +283,9 @@ sopt := sopt1
 	; Ouverture du fichier
 	fopen dskname, O_RDONLY
 	sta fp
-	sty fp+1
+	stx fp+1
 
-	ora fp+1
+	eor fp+1
 	jeq errFopen
 
 	; Calcul de l'adresse du tampon pour l'extraction
@@ -914,9 +917,9 @@ sopt := sopt1
 
 	fopen dskname, O_RDONLY
 	sta fp
-	sty fp+1
+	stx fp+1
 
-	ora fp+1
+	eor fp+1
 	beq errFopen
 
 	; TODO: Tester le code de retour de fread
@@ -1188,7 +1191,7 @@ svzp:
 		.res $80,0
 
 	keywords:
-.if 1
+.if .defined(BASIC)
 		string80   "END"
 		string80   "EDIT"
 		string80   "STORE"
@@ -1320,7 +1323,8 @@ svzp:
 		string80   "MID$"
 
 		.byte $00
-.else
+
+.elseif .defined(BASIC_lower)
 		string80   "end"
 		string80   "edit"
 		string80   "store"
@@ -1450,5 +1454,153 @@ svzp:
 		string80   "mid$"
 
 		.byte $00
-.endif
 
+.elseif .defined(COMAL)
+
+
+		string80 "END." ; Token: $80
+		string80 "FOR"
+		string80 "ENDFOR"
+		string80 "DATA"
+		string80 "INPUT"
+		string80 "DELETE"
+		string80 "DIM"
+		string80 "READ"
+		string80 "RENUMBER"
+		.if COMAL < 2
+			.byt $81
+		;	string80 "QUIT"
+			.byt $81
+			.byt $81
+		.else
+			string80 "INVERSE"
+			string80 "CLS"
+			string80 "ON:"
+		.endif
+		string80 "CALL"
+		.byt $81
+		.byt $81
+		.byt $81
+
+		string80 "ELSE" ; Token: $90
+		.byt $81
+		string80 "ENDWHILE"
+		string80 "WHILE"
+		string80 "DO:"
+		string80 "UNTIL"
+		.if COMAL < 2
+			.byt $81
+		.else
+			string80 "DOS"
+		.endif
+		.byt $81
+		string80 "PROC"
+		string80 "EXEC:"
+		string80 "ENDPROC"
+		.if COMAL < 2
+			.byt $81
+			.byt $81
+			.byt $81
+			.byt $81
+			.byt $81
+		.else
+			string80 "CREATE"
+			string80 "OPEN"
+			string80 "CLOSE"
+			string80 "DEL"
+			string80 "CHAIN"
+		.endif
+		.byt $81				; Token: $A0
+		string80 ":="
+		.byt $81
+		.if COMAL < 2
+			.byt $81
+		.else
+			string80 "AUTO"
+		.endif
+		string80 "LABEL:"
+		string80 "ONERR"
+		string80 "RESUME"
+		string80 "REPEAT"
+		string80 "ENDIF"
+		.byt $81
+		string80 "ENDCASE"
+		string80 "GOTO"
+		string80 "RUN"
+		string80 "IF"
+		string80 "RESTORE"
+		.byt $81
+
+		string80 "CASE" ; Token: $B0
+		string80 "OTHERWISE"
+		string80 "//"   ; Token: $B2
+		string80 "STOP"
+		string80 "WHEN"
+		string80 "WAIT"
+		string80 "LOAD"
+		string80 "SAVE"
+		string80 "DEF"
+		string80 "POKE"
+		string80 "PRINT"
+		string80 "CONT"
+		string80 "LIST"
+		string80 "CLEAR"
+		string80 "GET"
+		string80 "NEW"
+;
+; Table des mots clé secondaires
+;
+		string80 "TAB(" ; Token: $C0
+		string80 "TO"
+		string80 "FN"
+		string80 "SPC("
+		string80 "THEN"
+		.byt $81
+		string80 "NOT"
+		string80 "STEP"
+;
+; Table des opérateurs
+;
+		string80 "+"
+		string80 "-"
+		string80 "*"
+		string80 "/"
+		string80 "^"		    ; "^"
+		string80 "AND"
+		string80 "OR"
+		string80 ">"
+
+		string80 "="		    ; Token: $D0
+		string80 "<"
+;
+; Table des fonctions
+;
+		string80 "SGN"
+		string80 "INT"
+		string80 "ABS"
+		string80 "USR"
+		string80 "FRE"
+		.byt $81
+		;	string80 "IN$"		; Instruction on présente
+		string80 "POS"
+		string80 "RES"
+		string80 "SQR"
+		string80 "RND"
+		string80 "LOG"
+		string80 "EXP"
+		string80 "COS"
+		string80 "SIN"
+
+		string80 "TAN"  ; Token: $E0
+		string80 "ATN"
+		string80 "PEEK"
+		string80 "LEN"
+		string80 "STR$"
+		string80 "VAL"
+		string80 "ASC"
+		string80 "CHR$"
+		string80 "LEFT$"
+		string80 "RIGHT$"
+		string80 "MID$" ; Token: $EA
+		.byt $00				; Fin de la liste des mots clé
+.endif
