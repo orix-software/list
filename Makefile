@@ -1,4 +1,4 @@
-export PROJECT := list
+export PROJECT := $(notdir $(shell pwd))
 
 all: project docs
 
