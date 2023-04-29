@@ -12,16 +12,6 @@
 .include "stdio.inc"
 
 ;----------------------------------------------------------------------
-;			Orix Kernel includes
-;----------------------------------------------------------------------
-.include "kernel/src/include/kernel.inc"
-
-;----------------------------------------------------------------------
-;			Orix Shell includes
-;----------------------------------------------------------------------
-
-
-;----------------------------------------------------------------------
 ;			Orix SDK includes
 ;----------------------------------------------------------------------
 .include "SDK.mac"
@@ -82,14 +72,13 @@ VERSION_MIN = 0
 TOKEN_REM := $9D
 TOKEN_BANG := $C0
 
+KERNEL_MAX_PATH_LENGTH = 49
 max_path := KERNEL_MAX_PATH_LENGTH
-
-; SEEK_CUR = 0
-XFSEEK =$3f
 
 ; COMAL = 210
 BASIC = 1
 DEBUG = 1
+
 ;----------------------------------------------------------------------
 ;				Page Zéro
 ;----------------------------------------------------------------------
@@ -159,10 +148,35 @@ DEBUG = 1
 		crlf
 
 		; Adresse de la ligne de commande
-		ldy	#<(BUFEDT+.strlen("LIST"))
-		lda	#>(BUFEDT+.strlen("LIST"))
+		ldy	#<BUFEDT
+		lda	#>BUFEDT
+
+		; Saute le nom du programme
 		sty	cbp
 		sta	cbp+1
+
+		ldy	#$ff
+	loop:
+		iny
+		lda	(cbp),y
+		clc
+		beq	eol
+
+		cmp	#' '
+		bne	loop
+
+	eol:
+		; Ici si on a trouvé un ' ' => C=1
+		tya
+		ldy	cbp+1
+		adc	cbp
+		sta	cbp
+		bcc	loop_end
+
+		iny
+	loop_end:
+		sty	cbp+1
+
 
 		; Initialise la table des pointeurs token
 		jsr	loadtokens
@@ -396,7 +410,7 @@ DEBUG = 1
 		tay
 		pla
 		ldx	#$03
-		BRK_KERNEL	XDECIM
+		print_int
 
 		; -C?
 		bit	OPTIONS
@@ -553,7 +567,7 @@ DEBUG = 1
 ;	-
 ;----------------------------------------------------------------------
 .proc cmnd_version
-        prints  "list version 1.0 - 2022.2\r\n"
+        prints  "list version 1.1 - 2023.2\r\n"
         rts
 .endproc
 
